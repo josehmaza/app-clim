@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClimaMachala Sectorial | Mapa, Fuentes y Fiabilidad por Sectores</title>
+  <meta name="description" content="Monitoreo hiperlocal del clima y lluvias en Machala en tiempo real por sectores con mapa interactivo multi-fuente, ranking de fiabilidad y recomendaciones para Vergeles, Centro, Sur y Puerto Bolívar.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient Rain Canvas Background -->
+  <canvas id="rain-canvas"></canvas>
+
+  <div class="app-layout">
+    <!-- Header Principal -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-icon-wrapper">
+          <i class="fa-solid fa-cloud-bolt-sun"></i>
+        </div>
+        <div>
+          <div class="brand-badge">
+            <span class="live-dot"></span> Radar Hiperlocal de Machala
+          </div>
+          <h1 class="brand-title">ClimaMachala <span>Sectorial</span></h1>
+          <p class="brand-subtitle">Mapa en vivo, fuentes meteorológicas y comparativa por sectores</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Botón Sonido Ambiental sintetizado -->
+        <button id="btn-ambient-sound" class="btn-action btn-ambient" title="Activar sonido ambiental de lluvia">
+          <i class="fa-solid fa-volume-xmark"></i>
+          <span class="btn-text">Sonido Lluvia</span>
+        </button>
+
+        <!-- Botón GPS -->
+        <button id="btn-locate-me" class="btn-action" title="Detectar cuál es mi sector en Machala">
+          <i class="fa-solid fa-location-crosshairs"></i>
+          <span class="btn-text">Mi Sector</span>
+        </button>
+
+        <!-- Botón Refrescar -->
+        <button id="btn-refresh" class="btn-action btn-primary" title="Actualizar datos en vivo">
+          <i class="fa-solid fa-rotate-right" id="refresh-icon"></i>
+          <span class="btn-text">Actualizar</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Barra de Alerta Microclimática (Muestra si hay disparidad entre Norte y Sur) -->
+    <section id="disparity-banner" class="disparity-alert">
+      <div class="alert-icon">
+        <i class="fa-solid fa-cloud-showers-water"></i>
+      </div>
+      <div class="alert-content">
+        <h2 id="disparity-title" class="alert-title">Analizando microclimas de Machala...</h2>
+        <p id="disparity-desc" class="alert-desc">Consultando estaciones de alta resolución en Vergeles, Centro, Sur y Puerto Bolívar.</p>
+      </div>
+      <div class="alert-badge" id="disparity-status-badge">
+        En directo
+      </div>
+    </section>
+
+    <!-- Caja de Recomendación y Diagnóstico de IA según el Sector Consultor -->
+    <section class="ai-recommendation-card" id="ai-recommendation-section">
+      <div class="ai-rec-header">
+        <div class="ai-avatar">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div class="ai-title-block">
+          <div class="ai-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> Asesor Meteorológico Antigravity</div>
+          <h2 id="ai-sector-title">Diagnóstico de Fiabilidad para Norte (Los Vergeles)</h2>
+        </div>
+        <div class="ai-best-badge" id="ai-best-source-badge">
+          Fuente recomendada: <strong>ECMWF + Radar Doppler</strong>
+        </div>
+      </div>
+      <div class="ai-rec-body">
+        <p id="ai-sector-comment">
+          Cargando análisis de fiabilidad local para Machala...
+        </p>
+      </div>
+      <div class="ai-rec-footer">
+        <span class="ai-tip-tag"><i class="fa-solid fa-lightbulb"></i> Consejo para Hernan:</span>
+        <span id="ai-sector-tip" class="ai-tip-text">Haz clic en cualquier sector del mapa o de la cuadrícula para ver el análisis de fiabilidad específico para esa zona.</span>
+      </div>
+    </section>
+
+    <!-- Sección del Mapa Interactivo Multi-Fuente -->
+    <section class="map-interactive-section">
+      <div class="section-heading">
+        <div class="heading-title-group">
+          <i class="fa-solid fa-map"></i>
+          <h2>Mapa de Sectores y Radar de Precipitación</h2>
+        </div>
+        <div class="map-layer-toggles" id="map-controls">
+          <button class="map-toggle-btn active" id="btn-toggle-radar"><i class="fa-solid fa-satellite"></i> Radar de Lluvia</button>
+          <button class="map-toggle-btn active" id="btn-toggle-markers"><i class="fa-solid fa-location-dot"></i> Estaciones</button>
+          <button class="map-toggle-btn" id="btn-toggle-basemap"><i class="fa-solid fa-earth-americas"></i> Ver Satélite</button>
+          <button class="map-toggle-btn" id="btn-recenter-machala"><i class="fa-solid fa-crosshairs"></i> Centrar Machala</button>
+        </div>
+      </div>
+
+      <div class="map-card-wrapper">
+        <div id="machala-map" class="machala-leaflet-map"></div>
+        <div class="map-info-overlay">
+          <div class="map-legend-pill">
+            <span class="dot-status rain-now"></span> Lloviendo
+            <span class="dot-status dry-now"></span> Seco
+            <span class="dot-status selected-now"></span> Sector activo
+            <span style="color: var(--text-muted); margin-left: 0.5rem;"><i class="fa-solid fa-hand-pointer"></i> Haz clic en cualquier lugar del mapa para consultar ese punto</span>
+          </div>
+          <div class="map-source-note">
+            Capa base: OpenStreetMap Dark / Esri • Radar: RainViewer Doppler en vivo
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ranking de Fuentes Meteorológicas Ordenadas por Fiabilidad -->
+    <section class="sources-ranking-section">
+      <div class="section-heading">
+        <div class="heading-title-group">
+          <i class="fa-solid fa-ranking-star"></i>
+          <h2>Comparativa de Fuentes y Modelos (Ordenados por Fiabilidad en Machala)</h2>
+        </div>
+        <span class="sources-badge"><i class="fa-solid fa-circle-check"></i> Calibrado para la Costa de El Oro</span>
+      </div>
+
+      <div class="sources-ranking-grid" id="sources-ranking-grid">
+        <!-- Se genera dinámicamente con app.js -->
+      </div>
+    </section>
+
+    <!-- Resumen Comparativo Instantáneo Norte vs Sur vs Puerto Bolívar -->
+    <section class="quick-overview-section">
+      <div class="section-heading">
+        <div class="heading-title-group">
+          <i class="fa-solid fa-scale-balanced"></i>
+          <h2>Comparador de Disparidad Norte / Sur / Costa</h2>
+        </div>
+        <span class="last-sync" id="last-sync-time">Sincronizando...</span>
+      </div>
+
+      <div class="quick-compare-grid" id="quick-compare-container">
+        <!-- Se llena dinámicamente con app.js -->
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </section>
+
+    <!-- Grid de Todos los Sectores -->
+    <main class="sectors-section">
+      <div class="section-heading">
+        <div class="heading-title-group">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <h2>Sectores de Machala en Tiempo Real</h2>
+        </div>
+        <div class="filter-pills" id="sector-filters">
+          <button class="pill active" data-filter="all">Todos (8)</button>
+          <button class="pill" data-filter="rain">🌧️ Lloviendo ahora</button>
+          <button class="pill" data-filter="dry">☁️ Seco / Sin lluvia</button>
+        </div>
+      </div>
+
+      <div class="sectors-grid" id="sectors-grid">
+        <!-- Renderizado dinámicamente por app.js -->
+        <div class="skeleton-sector"></div>
+        <div class="skeleton-sector"></div>
+        <div class="skeleton-sector"></div>
+        <div class="skeleton-sector"></div>
+        <div class="skeleton-sector"></div>
+        <div class="skeleton-sector"></div>
+      </div>
+    </main>
+
+    <!-- Panel de Nowcasting y Radar Satelital Interactivo Windy -->
+    <section class="radar-nowcast-section">
+      <div class="section-heading">
+        <div class="heading-title-group">
+          <i class="fa-solid fa-satellite-dish"></i>
+          <h2>Radar Satelital y Doppler Adicional (Windy ECMWF)</h2>
+        </div>
+        <div class="radar-controls">
+          <span class="radar-tag"><i class="fa-solid fa-circle-dot live-pulse"></i> Modelo ECMWF 9km en Vivo</span>
+        </div>
+      </div>
+
+      <div class="radar-card">
+        <div class="radar-header-info">
+          <div>
+            <h3>Seguimiento de celdas de lluvia sobre Machala y el Golfo</h3>
+            <p>Observa el avance de las nubes entre la Costa (Puerto Bolívar), el Norte (Vergeles) y el Sur.</p>
+          </div>
+          <div class="radar-legend">
+            <span class="legend-item"><span class="color-dot rain-light"></span> Llovizna</span>
+            <span class="legend-item"><span class="color-dot rain-mod"></span> Moderada</span>
+            <span class="legend-item"><span class="color-dot rain-heavy"></span> Fuerte</span>
+            <span class="legend-item"><span class="color-dot rain-storm"></span> Tormenta</span>
+          </div>
+        </div>
+
+        <div class="radar-frame-container">
+          <iframe 
+            id="radar-iframe"
+            title="Radar de Lluvia en Machala"
+            src="https://embed.windy.com/embed2.html?lat=-3.25&lon=-79.96&detailLat=-3.25&detailLon=-79.96&width=100%&height=480&zoom=11&level=surface&overlay=radar&product=radar&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1" 
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pronóstico Detallado con Pestañas: Información Técnica y Explicación Humana -->
+    <div id="forecast-modal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-dialog">
+        <button id="modal-close-btn" class="modal-close" aria-label="Cerrar ventana">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="modal-header">
+          <div class="modal-sector-tag" id="modal-sector-tag">Norte</div>
+          <h2 id="modal-sector-name">Los Vergeles</h2>
+          <p id="modal-sector-desc">Circunvalación Norte, Urdesa Este</p>
+        </div>
+
+        <!-- Barra de Pestañas del Modal -->
+        <div class="modal-tabs-nav">
+          <button class="modal-tab-btn active" id="tab-btn-halfhour" onclick="switchModalTab('halfhour')">
+            <i class="fa-solid fa-clock-rotate-left"></i> Cada 30 Minutos (¿Hasta qué hora llueve?)
+          </button>
+          <button class="modal-tab-btn" id="tab-btn-human" onclick="switchModalTab('human')">
+            <i class="fa-solid fa-person-chalkboard"></i> ¿Qué significa? (En cristiano)
+          </button>
+          <button class="modal-tab-btn" id="tab-btn-tech" onclick="switchModalTab('tech')">
+            <i class="fa-solid fa-microchip"></i> Datos Técnicos
+          </button>
+        </div>
+
+        <!-- Pestaña 0: Pronóstico cada Media Hora (¿Hasta qué hora lloverá?) -->
+        <div class="modal-tab-pane active" id="tab-pane-halfhour">
+          <!-- Hero Banner: Veredicto de hora exacta en que para la lluvia -->
+          <div class="stop-time-hero-card" id="stop-time-hero-box">
+            <!-- Renderizado dinámicamente con JS -->
+          </div>
+
+          <div class="timeline-container">
+            <h3><i class="fa-solid fa-timeline"></i> Proyección paso a paso cada 30 minutos</h3>
+            <div class="halfhour-timeline" id="halfhour-timeline">
+              <!-- Bloques de cada 30 minutos en JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Pestaña 1: Explicación Humana con selector de N Horas -->
+        <div class="modal-tab-pane" id="tab-pane-human">
+          <div class="human-horizon-selector">
+            <label><i class="fa-solid fa-hourglass-half"></i> ¿Qué pasará en las próximas:</label>
+            <div class="horizon-btn-group">
+              <button class="horizon-btn active" data-hours="3" onclick="setHumanHorizon(3)">3 Horas</button>
+              <button class="horizon-btn" data-hours="6" onclick="setHumanHorizon(6)">6 Horas</button>
+              <button class="horizon-btn" data-hours="12" onclick="setHumanHorizon(12)">12 Horas</button>
+              <button class="horizon-btn" data-hours="24" onclick="setHumanHorizon(24)">24 Horas</button>
+            </div>
+          </div>
+
+          <!-- Diagnóstico en Lenguaje Claro -->
+          <div class="human-verdict-card" id="human-verdict-box">
+            <!-- Se llena dinámicamente con JS -->
+          </div>
+
+          <!-- Semáforo de Actividades y Vida Diaria -->
+          <div class="impact-section">
+            <h3 class="impact-title"><i class="fa-solid fa-shield-halved"></i> Impacto en tu vida cotidiana para este lapso</h3>
+            <div class="impact-grid" id="impact-grid">
+              <!-- Renderizado dinámico: Inundaciones, Tráfico, Ropa, Salir a pie -->
+            </div>
+          </div>
+
+          <!-- Glosario Didáctico para despejar dudas -->
+          <div class="didactic-faq">
+            <details class="faq-item">
+              <summary><i class="fa-solid fa-circle-question"></i> ¿Por qué dice 88% de probabilidad si casi no cae agua?</summary>
+              <p>El porcentaje no mide qué tan duro va a llover, sino la <strong>certeza de que habrá humedad o llovizna</strong>. Un 88% significa que es casi seguro que el cielo estará totalmente tapado y caerán gotas, pero como marca apenas 0.1 mm, solo será un rocío o garúa fina.</p>
+            </details>
+            <details class="faq-item">
+              <summary><i class="fa-solid fa-droplet"></i> ¿Cuál es la diferencia entre 0.1 mm y un aguacero?</summary>
+              <p><strong>0.1 a 0.4 mm:</strong> Garúa, sereno o rocío fino (el piso se moja, pero no sube el nivel del agua).<br>
+              <strong>1.0 a 3.0 mm:</strong> Lluvia moderada continua (necesitas paraguas).<br>
+              <strong>5.0 a 20+ mm:</strong> Aguacero fuerte o torrencial (peligro de anegamientos en calles bajas).</p>
+            </details>
+          </div>
+        </div>
+
+        <!-- Pestaña 2: Información Técnica Completa -->
+        <div class="modal-tab-pane" id="tab-pane-tech">
+          <div class="modal-nowcast-summary" id="modal-summary-box">
+            <!-- Resumen técnico rápido -->
+          </div>
+
+          <div class="timeline-container">
+            <h3><i class="fa-solid fa-clock"></i> Tabla técnica hora a hora</h3>
+            <div class="hourly-timeline" id="hourly-timeline">
+              <!-- Timeline generado en JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer informativo con notas locales de Machala -->
+    <footer class="app-footer">
+      <div class="footer-grid">
+        <div class="footer-info">
+          <h4><i class="fa-solid fa-city"></i> Dinámica Climática de Machala</h4>
+          <p>
+            Por su ubicación costera junto al Golfo de Guayaquil y la cuenca baja del Jubones, las lluvias en Machala suelen entrar como frentes convectivos marinos por Puerto Bolívar o descargas orográficas desde la cordillera por El Cambio. Es habitual que llueva intensamente en el Norte (Vergeles) mientras el Sur (Rayito de Luz / Vía a Balosa) permanece seco, o viceversa.
+          </p>
+        </div>
+        <div class="footer-sources">
+          <h4><i class="fa-solid fa-database"></i> Fuentes y Modelos Integrados</h4>
+          <ul>
+            <li><strong>RainViewer Doppler:</strong> Radar en tiempo real (reflectividad en vivo cada 10 min)</li>
+            <li><strong>ECMWF IFS (Europa):</strong> Modelo más fiable para lluvia en el litoral ecuatoriano</li>
+            <li><strong>INAMHI (Ecuador):</strong> Alertas hidrológicas y boletines oficiales para El Oro</li>
+            <li><strong>GFS (NOAA):</strong> Análisis de masas de aire sinópticas y viento</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>Diseñado especialmente para <strong>Hernan</strong> • Machala, El Oro, Ecuador</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
