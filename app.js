@@ -302,25 +302,33 @@ function initLeafletMap() {
     center: machalaCenter,
     zoom: 13,
     zoomControl: true,
-    attributionControl: false
+    attributionControl: true
   });
 
-  // Capas base 100% libres y sin necesidad de API key
-  const osmDarkLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // Capas base 100% libres, sin API key, sin marcas de agua ni bloqueos
+  const esriDarkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 16,
     maxZoom: 19,
-    className: 'dark-tiles-osm',
-    attribution: '© OpenStreetMap'
+    attribution: '&copy; <a href="https://www.esri.com" target="_blank">Esri</a>, HERE, Garmin'
   });
+
+  const esriDarkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 16,
+    maxZoom: 19
+  });
+
+  const darkLayer = L.layerGroup([esriDarkBase, esriDarkRef]);
 
   const esriSatLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 18,
     maxZoom: 19,
-    attribution: '© Esri, Maxar'
+    attribution: '&copy; <a href="https://www.esri.com" target="_blank">Esri</a>, Maxar'
   });
 
   // Agregar por defecto la capa oscura calibrada
-  osmDarkLayer.addTo(map);
+  darkLayer.addTo(map);
   weatherState.currentBaseLayer = 'dark';
-  weatherState.baseLayers = { dark: osmDarkLayer, satellite: esriSatLayer };
+  weatherState.baseLayers = { dark: darkLayer, satellite: esriSatLayer };
 
   weatherState.markersLayer = L.layerGroup().addTo(map);
   weatherState.leafletMap = map;

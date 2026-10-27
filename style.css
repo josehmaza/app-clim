@@ -511,6 +511,25 @@ body {
   filter: brightness(0.55) invert(1) contrast(2.6) hue-rotate(205deg) saturate(0.28) brightness(0.75) !important;
 }
 
+.leaflet-control-attribution {
+  background: rgba(11, 17, 30, 0.75) !important;
+  color: #7e8da6 !important;
+  font-size: 10px !important;
+  backdrop-filter: blur(6px);
+  border-radius: 4px;
+  padding: 2px 6px !important;
+  margin: 4px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #00f2fe !important;
+  text-decoration: none !important;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline !important;
+}
+
 .leaflet-bar a {
   background-color: hsl(225, 30%, 14%) !important;
   color: #fff !important;
