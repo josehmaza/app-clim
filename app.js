@@ -407,6 +407,30 @@ function initLeafletMap() {
     map.setView(machalaCenter, 13, { animate: true });
   });
 
+  // Control interactivo de la Guía de Íconos del Clima
+  const btnToggleLegend = document.getElementById('btn-toggle-legend');
+  const btnCloseLegend = document.getElementById('btn-close-legend');
+  const legendPanel = document.getElementById('weather-legend-panel');
+
+  if (btnToggleLegend && legendPanel) {
+    btnToggleLegend.addEventListener('click', function() {
+      const isCollapsed = legendPanel.classList.toggle('collapsed');
+      if (isCollapsed) {
+        this.classList.remove('active');
+      } else {
+        this.classList.add('active');
+        legendPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
+
+  if (btnCloseLegend && legendPanel) {
+    btnCloseLegend.addEventListener('click', function() {
+      legendPanel.classList.add('collapsed');
+      if (btnToggleLegend) btnToggleLegend.classList.remove('active');
+    });
+  }
+
   // Soporte para hacer clic en cualquier punto del mapa y consultar el clima en tiempo real
   map.on('click', async function(e) {
     await handleMapCustomPoint(e.latlng.lat, e.latlng.lng, map);
@@ -577,9 +601,10 @@ function initMapTimeSelector() {
   const liveHomePrecip = homeSector.precipNum || 0;
   const liveHomeTemp = homeSector.temp || 25;
   const liveHomeSub = liveHomePrecip >= 0.2 ? `${liveHomePrecip.toFixed(1)} mm` : `${liveHomeTemp}°C`;
+  const liveHomeCondition = homeSector.weather?.name || 'Condiciones en vivo';
 
   let pillsHtml = `
-    <button class="time-pill active" data-hour-idx="live">
+    <button class="time-pill active" data-hour-idx="live" title="Ahora en Mi Casa (Los Vergeles): ${liveHomeCondition} • ${liveHomeTemp}°C${liveHomePrecip >= 0.1 ? ' • ' + liveHomePrecip.toFixed(1) + ' mm' : ''}">
       <span class="pill-day"><i class="fa-solid fa-circle live-dot-mini"></i> En Vivo</span>
       <span class="pill-hour">Ahora</span>
       <span class="pill-sub ${liveHomePrecip >= 0.2 ? 'sub-rain' : ''}">${liveHomeSub}</span>
@@ -609,7 +634,7 @@ function initMapTimeSelector() {
     const rainSub = isRainAlert ? `${homePrecip.toFixed(1)} mm` : `${homeTemp}°C`;
 
     pillsHtml += `
-      <button class="time-pill ${isTomorrow ? 'pill-tomorrow' : ''}" data-hour-idx="${idx}" data-hour-str="${hourLabel}" data-day="${dayLabel}">
+      <button class="time-pill ${isTomorrow ? 'pill-tomorrow' : ''}" data-hour-idx="${idx}" data-hour-str="${hourLabel}" data-day="${dayLabel}" title="${dayLabel} ${hourLabel} en Los Vergeles: ${wInfo.name} • ${homeTemp}°C${homePrecip >= 0.1 ? ' • Lluvia: ' + homePrecip.toFixed(1) + ' mm' : ''}">
         <span class="pill-day ${isTomorrow ? 'tag-tomorrow' : ''}">${dayLabel}</span>
         <span class="pill-hour"><i class="fa-solid ${wInfo.icon}" style="color: ${wInfo.color};"></i> ${hourLabel}</span>
         <span class="pill-sub ${isRainAlert ? 'sub-rain' : ''}">${rainSub}</span>
@@ -817,7 +842,8 @@ function updateMapMarkers(simulatedHourIndex = null) {
 
     const marker = L.marker([sector.lat, sector.lon], { 
       icon: customIcon,
-      draggable: isHome
+      draggable: isHome,
+      title: `${sector.name}: ${weather.text} (${temp}°C${precipNum > 0 ? ' • ' + precip + ' mm' : ''})`
     });
 
     if (isHome) {
