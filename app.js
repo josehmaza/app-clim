@@ -8,22 +8,22 @@
 const MACHALA_SECTORS = [
   {
     id: 'norte',
-    name: 'Norte (Los Vergeles)',
+    name: 'Mi Casa 🏠 (Hernan - Los Vergeles)',
     landmarks: 'Urb. Los Vergeles, Urdesa Este, Circunvalación Norte',
     lat: -3.2435,
     lon: -79.9480,
-    tag: 'Norte',
-    color: '#00f2fe'
-  },
-  {
-    id: 'micasa',
-    name: 'Mi Casa 🏠 (Hernan - Machala Libre)',
-    landmarks: 'Sector Machala Libre / Los Ceibos / Av. Edgar Córdova',
-    lat: -3.2515,
-    lon: -79.9385,
     tag: 'Mi Casa 🏠',
     color: '#ffd166',
     isUserHome: true
+  },
+  {
+    id: 'machala_libre',
+    name: 'Machala Libre / Los Ceibos',
+    landmarks: 'Sector Machala Libre, Los Ceibos, Av. Edgar Córdova',
+    lat: -3.2515,
+    lon: -79.9385,
+    tag: 'Machala Libre',
+    color: '#00f2fe'
   },
   {
     id: 'brisas',
@@ -546,8 +546,9 @@ function initMapTimeSelector() {
     L.DomEvent.disableScrollPropagation(mapBar);
   }
 
-  const sampleSector = weatherState.sectorsData[0];
-  const hourly = sampleSector.rawHourly;
+  // Obtener específicamente los datos meteorológicos de Mi Casa (Los Vergeles)
+  const homeSector = weatherState.sectorsData.find(sec => sec.isUserHome) || weatherState.sectorsData[0];
+  const hourly = homeSector.rawHourly;
   if (!hourly || !hourly.time || !hourly.time.length) return;
 
   const now = new Date();
@@ -564,15 +565,19 @@ function initMapTimeSelector() {
     }
   }
 
+  const liveHomePrecip = homeSector.precipNum || 0;
+  const liveHomeTemp = homeSector.temp || 25;
+  const liveHomeSub = liveHomePrecip >= 0.2 ? `${liveHomePrecip.toFixed(1)} mm` : `${liveHomeTemp}°C`;
+
   let pillsHtml = `
     <button class="time-pill active" data-hour-idx="live">
       <span class="pill-day"><i class="fa-solid fa-circle live-dot-mini"></i> En Vivo</span>
       <span class="pill-hour">Ahora</span>
-      <span class="pill-sub">Actual</span>
+      <span class="pill-sub ${liveHomePrecip >= 0.2 ? 'sub-rain' : ''}">${liveHomeSub}</span>
     </button>
   `;
 
-  // Generar hasta 36 horas adelante (incluyendo todo el día de mañana)
+  // Generar hasta 36 horas adelante (incluyendo todo el día de mañana) con los datos hiperlocales de Mi Casa (Vergeles)
   for (let offset = 1; offset <= 36; offset++) {
     const idx = nowIdx + offset;
     if (idx >= hourly.time.length) break;
@@ -584,24 +589,15 @@ function initMapTimeSelector() {
     const dayLabel = isTomorrow ? 'Mañana' : 'Hoy';
     const hourLabel = `${h24.toString().padStart(2, '0')}:00`;
 
-    // Evaluar clima promedio y pico de lluvia para este horario
-    let maxPrecip = 0;
-    let avgTemp = 0;
-    let worstCode = 0;
-    weatherState.sectorsData.forEach(sec => {
-      const p = sec.rawHourly && sec.rawHourly.precipitation ? (sec.rawHourly.precipitation[idx] || 0) : 0;
-      const t = sec.rawHourly && sec.rawHourly.temperature_2m ? (sec.rawHourly.temperature_2m[idx] || 25) : 25;
-      const c = sec.rawHourly && sec.rawHourly.weather_code ? (sec.rawHourly.weather_code[idx] || 0) : 0;
-      if (p > maxPrecip) maxPrecip = p;
-      if (c > worstCode) worstCode = c;
-      avgTemp += t;
-    });
-    avgTemp = Math.round(avgTemp / weatherState.sectorsData.length);
+    // Clima hiperlocal exacto de Mi Casa (Los Vergeles)
+    const homePrecip = hourly.precipitation ? (hourly.precipitation[idx] || 0) : 0;
+    const homeTemp = Math.round(hourly.temperature_2m ? (hourly.temperature_2m[idx] || 25) : 25);
+    const homeCode = hourly.weather_code ? (hourly.weather_code[idx] || 0) : 0;
 
     const isNight = h24 >= 19 || h24 < 6;
-    const wInfo = interpretWeatherCode(worstCode, maxPrecip, isNight);
-    const isRainAlert = maxPrecip >= 0.2;
-    const rainSub = isRainAlert ? `${maxPrecip.toFixed(1)} mm` : `${avgTemp}°C`;
+    const wInfo = interpretWeatherCode(homeCode, homePrecip, isNight);
+    const isRainAlert = homePrecip >= 0.2;
+    const rainSub = isRainAlert ? `${homePrecip.toFixed(1)} mm` : `${homeTemp}°C`;
 
     pillsHtml += `
       <button class="time-pill ${isTomorrow ? 'pill-tomorrow' : ''}" data-hour-idx="${idx}" data-hour-str="${hourLabel}" data-day="${dayLabel}">
@@ -861,22 +857,20 @@ function updateAiRecommendation(sectorId) {
 
   titleEl.innerHTML = `Diagnóstico de Fiabilidad para <strong>${sector.name}</strong>`;
 
-  if (sector.id === 'micasa') {
+  if (sector.id === 'norte' || sector.id === 'micasa') {
     badgeEl.innerHTML = `Fuente #1 recomendada: <strong>ECMWF + Radar Doppler</strong>`;
     commentEl.innerHTML = `
-      Hernan, este es el punto exacto de **tu casa (Sector Machala Libre / Los Ceibos)**. 
-      Al situarse en el corredor intermedio entre Vergeles y Las Brisas, las celdas de lluvia suelen cruzar aquí en dirección suroeste. 
-      Revisa la pestaña **«Cada 30 Minutos»** para saber la hora exacta en que cesará la llovizna esta madrugada y si habrá tregua para dormir tranquilo.
-    `;
-    tipEl.textContent = 'Tu casa está monitoreada con resolución hiperlocal de 15 minutos en el mapa.';
-  } else if (sector.id === 'norte') {
-    badgeEl.innerHTML = `Fuente #1 recomendada: <strong>ECMWF + Radar Doppler</strong>`;
-    commentEl.innerHTML = `
-      Hernan, para **Los Vergeles y Circunvalación Norte**, la combinación más fiable es el **Radar Doppler (RainViewer)** junto al modelo **ECMWF IFS**. 
+      Hernan, este es el punto exacto de **tu casa (Los Vergeles / Circunvalación Norte)**. 
       Las tormentas en esta zona suelen entrar rápidamente desde el estuario y descargan con gran volumen en periodos cortos (30 a 50 minutos). 
-      El pronóstico genérico de Android suele promediar todo el cantón y te dirá que "no llueve" cuando aquí ya tienes agua en las cunetas. Monitorea el radar de reflectividad para saber el minuto exacto en que cesa.
+      El selector de horas superior te muestra el pronóstico hiperlocal proyectado hora a hora directamente para tu domicilio en Vergeles.
     `;
-    tipEl.textContent = 'En Vergeles, el suelo plano y canales secundarios provocan anegamientos rápidos. No te confíes si el aguacero parece detenerse: vigila el avance del radar.';
+    tipEl.textContent = 'Tu casa en Los Vergeles está monitoreada en tiempo real. En suelo plano y canales secundarios vigila el avance del radar.';
+  } else if (sector.id === 'machala_libre') {
+    badgeEl.innerHTML = `Fuente #1 recomendada: <strong>ECMWF + Radar Doppler</strong>`;
+    commentEl.innerHTML = `
+      Para **Machala Libre y Los Ceibos**, al situarse en el corredor intermedio hacia Las Brisas, las celdas de lluvia suelen cruzar aquí en dirección suroeste.
+    `;
+    tipEl.textContent = 'Monitorea la reflectividad Doppler para saber el avance de las celdas de precipitación.';
   } else if (sector.id === 'brisas') {
     badgeEl.innerHTML = `Fuente #1 recomendada: <strong>ECMWF + Radar Doppler</strong>`;
     commentEl.innerHTML = `

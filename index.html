@@ -118,8 +118,8 @@
         <!-- Selector flotante de simulación horaria (Arriba en el mapa) -->
         <div class="map-time-nav-bar" id="map-time-bar">
           <div class="time-bar-title-wrap">
-            <span class="time-bar-badge"><i class="fa-solid fa-clock-rotate-left"></i> Hora</span>
-            <span class="time-bar-status" id="time-bar-status">En Vivo</span>
+            <span class="time-bar-badge"><i class="fa-solid fa-house"></i> Mi Casa</span>
+            <span class="time-bar-status" id="time-bar-status">Los Vergeles</span>
           </div>
 
           <button id="btn-scroll-left" class="btn-scroll-arrow" title="Ver horas anteriores"><i class="fa-solid fa-chevron-left"></i></button>
@@ -152,21 +152,6 @@
             Capa base: OpenStreetMap Dark / Esri • Radar: RainViewer Doppler en vivo
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Ranking de Fuentes Meteorológicas Ordenadas por Fiabilidad -->
-    <section class="sources-ranking-section">
-      <div class="section-heading">
-        <div class="heading-title-group">
-          <i class="fa-solid fa-ranking-star"></i>
-          <h2>Comparativa de Fuentes y Modelos (Ordenados por Fiabilidad en Machala)</h2>
-        </div>
-        <span class="sources-badge"><i class="fa-solid fa-circle-check"></i> Calibrado para la Costa de El Oro</span>
-      </div>
-
-      <div class="sources-ranking-grid" id="sources-ranking-grid">
-        <!-- Se genera dinámicamente con app.js -->
       </div>
     </section>
 
@@ -247,6 +232,21 @@
             loading="lazy">
           </iframe>
         </div>
+      </div>
+    </section>
+
+    <!-- Ranking de Fuentes Meteorológicas Ordenadas por Fiabilidad (Al final) -->
+    <section class="sources-ranking-section">
+      <div class="section-heading">
+        <div class="heading-title-group">
+          <i class="fa-solid fa-ranking-star"></i>
+          <h2>Comparativa de Fuentes y Modelos (Ordenados por Fiabilidad en Machala)</h2>
+        </div>
+        <span class="sources-badge"><i class="fa-solid fa-circle-check"></i> Calibrado para la Costa de El Oro</span>
+      </div>
+
+      <div class="sources-ranking-grid" id="sources-ranking-grid">
+        <!-- Se genera dinámicamente con app.js -->
       </div>
     </section>
 
