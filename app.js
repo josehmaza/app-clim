@@ -162,11 +162,12 @@ let weatherState = {
 // ==========================================================================
 // Mapeo e Interpretación de Códigos Meteorológicos (WMO)
 // ==========================================================================
-function interpretWeatherCode(code, precip = 0) {
+function interpretWeatherCode(code, precip = 0, isNight = false) {
   if (code >= 95) {
     return {
       text: 'Tormenta Eléctrica',
       icon: 'fa-cloud-bolt',
+      color: '#ffd166',
       statusClass: 'badge-rain-storm',
       isRaining: true,
       intensity: 'Tormenta'
@@ -175,8 +176,9 @@ function interpretWeatherCode(code, precip = 0) {
   if (code === 82 || precip >= 5.0) {
     return {
       text: 'Aguacero Torrencial',
-      icon: 'fa-cloud-showers-heavy',
-      statusClass: 'badge-rain-storm',
+      icon: 'fa-cloud-showers-water',
+      color: '#ff477e',
+      statusClass: 'badge-rain-torrential',
       isRaining: true,
       intensity: 'Muy Fuerte'
     };
@@ -185,6 +187,7 @@ function interpretWeatherCode(code, precip = 0) {
     return {
       text: 'Lluvia Fuerte',
       icon: 'fa-cloud-showers-heavy',
+      color: '#3a86ff',
       statusClass: 'badge-rain-heavy',
       isRaining: true,
       intensity: 'Fuerte'
@@ -194,6 +197,7 @@ function interpretWeatherCode(code, precip = 0) {
     return {
       text: 'Lluvia Moderada',
       icon: 'fa-cloud-rain',
+      color: '#00f2fe',
       statusClass: 'badge-rain-mod',
       isRaining: true,
       intensity: 'Moderada'
@@ -202,7 +206,8 @@ function interpretWeatherCode(code, precip = 0) {
   if (code === 51 || code === 53 || code === 55 || code === 61 || (precip > 0.0 && precip < 0.5)) {
     return {
       text: 'Llovizna / Garúa',
-      icon: 'fa-cloud-sun-rain',
+      icon: isNight ? 'fa-cloud-moon-rain' : 'fa-cloud-sun-rain',
+      color: '#38ef7d',
       statusClass: 'badge-rain-light',
       isRaining: true,
       intensity: 'Leve'
@@ -212,6 +217,7 @@ function interpretWeatherCode(code, precip = 0) {
     return {
       text: 'Neblina / Niebla',
       icon: 'fa-smog',
+      color: '#94a3b8',
       statusClass: 'badge-rain-none',
       isRaining: false,
       intensity: 'Seco'
@@ -221,6 +227,7 @@ function interpretWeatherCode(code, precip = 0) {
     return {
       text: 'Cielo Nublado',
       icon: 'fa-cloud',
+      color: '#94a3b8',
       statusClass: 'badge-rain-none',
       isRaining: false,
       intensity: 'Seco'
@@ -229,15 +236,17 @@ function interpretWeatherCode(code, precip = 0) {
   if (code === 1 || code === 2) {
     return {
       text: 'Parcialmente Nublado',
-      icon: 'fa-cloud-sun',
+      icon: isNight ? 'fa-cloud-moon' : 'fa-cloud-sun',
+      color: isNight ? '#c084fc' : '#fbbf24',
       statusClass: 'badge-rain-none',
       isRaining: false,
       intensity: 'Seco'
     };
   }
   return {
-    text: 'Cielo Despejado',
-    icon: 'fa-sun',
+    text: isNight ? 'Cielo Despejado (Noche)' : 'Cielo Despejado',
+    icon: isNight ? 'fa-moon' : 'fa-sun',
+    color: isNight ? '#a78bfa' : '#f59e0b',
     statusClass: 'badge-rain-none',
     isRaining: false,
     intensity: 'Seco'
@@ -288,6 +297,7 @@ async function fetchMachalaWeatherData() {
   weatherState.lastUpdated = new Date();
   renderApp();
   updateMapMarkers();
+  initMapTimeSelector();
 }
 
 // ==========================================================================
@@ -338,14 +348,19 @@ function initLeafletMap() {
 
   // Eventos de controles de mapa
   document.getElementById('btn-toggle-radar').addEventListener('click', function() {
-    if (!weatherState.radarLayer) return;
+    if (!weatherState.radarLayer) {
+      showMapToast('🛰️ Conectando con radar Doppler RainViewer...');
+      return;
+    }
     weatherState.radarVisible = !weatherState.radarVisible;
     if (weatherState.radarVisible) {
       map.addLayer(weatherState.radarLayer);
       this.classList.add('active');
+      showMapToast('🛰️ Radar Doppler activo: Si no ves manchas de color, es porque el cielo está despejado y no hay lluvia sobre Machala en este instante.');
     } else {
       map.removeLayer(weatherState.radarLayer);
       this.classList.remove('active');
+      showMapToast('Radar Doppler desactivado');
     }
   });
 
@@ -492,28 +507,242 @@ async function loadRainViewerRadar(map) {
   }
 }
 
-// Actualiza los marcadores interactivos en el mapa con iconos visuales de clima
-function updateMapMarkers() {
+let mapToastTimer = null;
+function showMapToast(msg) {
+  let toast = document.getElementById('map-floating-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'map-floating-toast';
+    toast.className = 'map-floating-toast';
+    const mapCard = document.querySelector('.map-card-wrapper');
+    if (mapCard) mapCard.appendChild(toast);
+  }
+  toast.innerHTML = `<i class="fa-solid fa-satellite-dish" style="color: var(--cyan-neon);"></i> <span>${msg}</span>`;
+  toast.style.display = 'flex';
+  toast.style.opacity = '1';
+
+  clearTimeout(mapToastTimer);
+  mapToastTimer = setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => { toast.style.display = 'none'; }, 300);
+  }, 4500);
+}
+
+// Inicializa el selector de horas flotante sobre el mapa
+function initMapTimeSelector() {
+  const container = document.getElementById('time-pills-container');
+  const statusEl = document.getElementById('time-bar-status');
+  const resetBtn = document.getElementById('btn-reset-time');
+  const mapBar = document.getElementById('map-time-bar');
+  if (!container || !weatherState.sectorsData || !weatherState.sectorsData.length) return;
+
+  // Evitar que el drag/scroll sobre el selector mueva el mapa Leaflet
+  if (mapBar && window.L) {
+    L.DomEvent.disableClickPropagation(mapBar);
+    L.DomEvent.disableScrollPropagation(mapBar);
+  }
+
+  const sampleSector = weatherState.sectorsData[0];
+  const hourly = sampleSector.rawHourly;
+  if (!hourly || !hourly.time || !hourly.time.length) return;
+
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  // Buscar índice de la hora actual en los datos
+  let nowIdx = 0;
+  for (let i = 0; i < hourly.time.length; i++) {
+    const d = new Date(hourly.time[i]);
+    if (d.getDate() === now.getDate() && d.getHours() === currentHour) {
+      nowIdx = i;
+      break;
+    }
+  }
+
+  let pillsHtml = `
+    <button class="time-pill active" data-hour-idx="live">
+      <span class="pill-day"><i class="fa-solid fa-circle live-dot-mini"></i> En Vivo</span>
+      <span class="pill-hour">Ahora</span>
+      <span class="pill-sub">Actual</span>
+    </button>
+  `;
+
+  for (let offset = 1; offset <= 24; offset++) {
+    const idx = nowIdx + offset;
+    if (idx >= hourly.time.length) break;
+
+    const timeStr = hourly.time[idx];
+    const dateObj = new Date(timeStr);
+    const h24 = dateObj.getHours();
+    const isTomorrow = dateObj.getDate() !== now.getDate();
+    const dayLabel = isTomorrow ? 'Mañana' : 'Hoy';
+    const hourLabel = `${h24.toString().padStart(2, '0')}:00`;
+
+    // Evaluar clima promedio y pico de lluvia para este horario
+    let maxPrecip = 0;
+    let avgTemp = 0;
+    let worstCode = 0;
+    weatherState.sectorsData.forEach(sec => {
+      const p = sec.rawHourly && sec.rawHourly.precipitation ? (sec.rawHourly.precipitation[idx] || 0) : 0;
+      const t = sec.rawHourly && sec.rawHourly.temperature_2m ? (sec.rawHourly.temperature_2m[idx] || 25) : 25;
+      const c = sec.rawHourly && sec.rawHourly.weather_code ? (sec.rawHourly.weather_code[idx] || 0) : 0;
+      if (p > maxPrecip) maxPrecip = p;
+      if (c > worstCode) worstCode = c;
+      avgTemp += t;
+    });
+    avgTemp = Math.round(avgTemp / weatherState.sectorsData.length);
+
+    const isNight = h24 >= 19 || h24 < 6;
+    const wInfo = interpretWeatherCode(worstCode, maxPrecip, isNight);
+    const isRainAlert = maxPrecip >= 0.2;
+    const rainSub = isRainAlert ? `${maxPrecip.toFixed(1)} mm` : `${avgTemp}°C`;
+
+    pillsHtml += `
+      <button class="time-pill ${isTomorrow ? 'pill-tomorrow' : ''}" data-hour-idx="${idx}" data-hour-str="${hourLabel}" data-day="${dayLabel}">
+        <span class="pill-day ${isTomorrow ? 'tag-tomorrow' : ''}">${dayLabel}</span>
+        <span class="pill-hour"><i class="fa-solid ${wInfo.icon}" style="color: ${wInfo.color};"></i> ${hourLabel}</span>
+        <span class="pill-sub ${isRainAlert ? 'sub-rain' : ''}">${rainSub}</span>
+      </button>
+    `;
+  }
+
+  container.innerHTML = pillsHtml;
+
+  container.querySelectorAll('.time-pill').forEach(btn => {
+    btn.addEventListener('click', function() {
+      container.querySelectorAll('.time-pill').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      const hourIdxVal = this.getAttribute('data-hour-idx');
+      if (hourIdxVal === 'live') {
+        weatherState.simulatedHourIndex = null;
+        if (statusEl) statusEl.textContent = 'En Vivo';
+        if (resetBtn) resetBtn.style.display = 'none';
+        updateMapMarkers(null);
+        renderSectorsGrid(weatherState.sectorsData);
+        analyzeDisparity(weatherState.sectorsData);
+        updateAiRecommendation(weatherState.selectedSectorId);
+        showMapToast('Mostrando datos satelitales actuales en vivo');
+      } else {
+        const idx = parseInt(hourIdxVal, 10);
+        weatherState.simulatedHourIndex = idx;
+        const hourStr = this.getAttribute('data-hour-str');
+        const dayLabel = this.getAttribute('data-day');
+        if (statusEl) statusEl.innerHTML = `<span style="color: var(--cyan-neon);">${dayLabel} ${hourStr}</span>`;
+        if (resetBtn) resetBtn.style.display = 'inline-flex';
+        updateMapMarkers(idx);
+        updateSectorsWithSimulatedHour(idx, hourStr, dayLabel);
+        showMapToast(`Simulando mapa para: ${dayLabel} a las ${hourStr}`);
+      }
+    });
+  });
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      const liveBtn = container.querySelector('[data-hour-idx="live"]');
+      if (liveBtn) liveBtn.click();
+    });
+  }
+}
+
+// Actualiza las tarjetas y diagnósticos cuando se selecciona una hora futura
+function updateSectorsWithSimulatedHour(hourIdx, hourStr, dayLabel) {
+  const simulatedSectors = weatherState.sectorsData.map(sec => {
+    const rawH = sec.rawHourly || {};
+    const temp = Math.round(rawH.temperature_2m ? rawH.temperature_2m[hourIdx] : sec.temp);
+    const precipNum = rawH.precipitation ? (rawH.precipitation[hourIdx] || 0) : 0;
+    const precip = precipNum.toFixed(1);
+    const prob = rawH.precipitation_probability ? (rawH.precipitation_probability[hourIdx] || 0) : 0;
+    const code = rawH.weather_code ? rawH.weather_code[hourIdx] : 0;
+    const timeStr = rawH.time ? rawH.time[hourIdx] : '';
+    const dObj = new Date(timeStr);
+    const h24 = dObj.getHours();
+    const isNight = h24 >= 19 || h24 < 6;
+    const weather = interpretWeatherCode(code, precipNum, isNight);
+
+    return {
+      ...sec,
+      temp,
+      precip,
+      precipNum,
+      prob,
+      weather
+    };
+  });
+
+  renderSectorsGrid(simulatedSectors);
+  renderCompareCards(simulatedSectors);
+
+  // Actualizar banner de disparidad con pronóstico
+  const banner = document.getElementById('disparity-banner');
+  const title = document.getElementById('disparity-title');
+  const desc = document.getElementById('disparity-desc');
+  const badge = document.getElementById('disparity-status-badge');
+
+  const raining = simulatedSectors.filter(s => s.precipNum >= 0.2 || s.weather.isRaining);
+  const dry = simulatedSectors.filter(s => s.precipNum < 0.2 && !s.weather.isRaining);
+
+  if (badge) badge.textContent = `Pronóstico ${hourStr}`;
+
+  if (raining.length > 0 && dry.length > 0) {
+    banner.classList.add('disparity-detected');
+    title.innerHTML = `🔮 ${dayLabel} ${hourStr}: Se prevé lluvia en <strong>${raining.map(s => s.tag).join(', ')}</strong> y tiempo seco en <strong>${dry.map(s => s.tag).join(', ')}</strong>`;
+    desc.textContent = `Proyección del modelo meteorológico ECMWF / Open-Meteo para las ${hourStr}.`;
+  } else if (raining.length > 0) {
+    banner.classList.remove('disparity-detected');
+    title.innerHTML = `🌧️ ${dayLabel} ${hourStr}: Probabilidad de lluvia en todos los sectores de Machala (${raining[0].precip} mm/h)`;
+    desc.textContent = `Ambiente húmedo generalizado proyectado para las ${hourStr}.`;
+  } else {
+    banner.classList.remove('disparity-detected');
+    title.innerHTML = `☁️ ${dayLabel} ${hourStr}: Sin lluvias previstas en Machala`;
+    desc.textContent = `Cielo proyectado estable o nublado sin precipitaciones significativas.`;
+  }
+}
+
+// Actualiza los marcadores interactivos en el mapa con iconos visuales de clima diferenciados
+function updateMapMarkers(simulatedHourIndex = null) {
   if (!weatherState.leafletMap || !weatherState.markersLayer) return;
   weatherState.markersLayer.clearLayers();
 
   weatherState.sectorsData.forEach(sector => {
-    const isSelected = weatherState.selectedSectorId === sector.id;
-    const isRaining = sector.precipNum >= 0.2 || sector.weather.isRaining;
-    const isHome = Boolean(sector.isUserHome);
-    const pulseColor = isSelected ? '#c77dff' : (isHome ? '#ffd166' : (isRaining ? '#00f2fe' : '#94a3b8'));
+    let temp = sector.temp;
+    let precip = sector.precip;
+    let precipNum = sector.precipNum;
+    let weather = sector.weather;
+    let prob = sector.prob || 0;
+    let hourTitle = 'En Vivo';
 
-    // Pin visual de clima con icono, nombre y valor
+    if (simulatedHourIndex !== null && sector.rawHourly && sector.rawHourly.time) {
+      const idx = simulatedHourIndex;
+      temp = Math.round(sector.rawHourly.temperature_2m ? sector.rawHourly.temperature_2m[idx] : sector.temp);
+      precipNum = sector.rawHourly.precipitation ? (sector.rawHourly.precipitation[idx] || 0) : 0;
+      precip = precipNum.toFixed(1);
+      prob = sector.rawHourly.precipitation_probability ? (sector.rawHourly.precipitation_probability[idx] || 0) : 0;
+      const code = sector.rawHourly.weather_code ? sector.rawHourly.weather_code[idx] : 0;
+      const timeStr = sector.rawHourly.time[idx];
+      const dObj = new Date(timeStr);
+      const h24 = dObj.getHours();
+      const isNight = h24 >= 19 || h24 < 6;
+      weather = interpretWeatherCode(code, precipNum, isNight);
+      hourTitle = `${h24.toString().padStart(2, '0')}:00`;
+    }
+
+    const isSelected = weatherState.selectedSectorId === sector.id;
+    const isRaining = precipNum >= 0.2 || weather.isRaining;
+    const isHome = Boolean(sector.isUserHome);
+    const pulseColor = isSelected ? '#c77dff' : (isHome ? '#ffd166' : (isRaining ? weather.color : '#94a3b8'));
+
+    // Pin visual de clima con icono diferenciado y color exacto
     const customIcon = L.divIcon({
       className: 'custom-weather-pin-container',
       html: `
         <div class="custom-weather-pin ${isSelected ? 'selected-pin' : ''} ${isHome ? 'home-pin' : ''}" style="--pin-glow: ${pulseColor};">
-          <span class="pin-icon-wrap" style="color: ${isHome ? '#ffd166' : (isRaining ? 'var(--cyan-neon)' : '#ffb703')};">
-            <i class="fa-solid ${sector.weather.icon}"></i>
+          <span class="pin-icon-wrap" style="color: ${weather.color};">
+            <i class="fa-solid ${weather.icon}"></i>
           </span>
           <div class="pin-info-wrap">
             <span class="pin-sector-name">${sector.tag}</span>
-            <span class="pin-weather-val">${sector.precipNum > 0 ? sector.precip + ' mm' : sector.temp + '°C'}</span>
+            <span class="pin-weather-val">${precipNum > 0 ? precip + ' mm' : temp + '°C'}</span>
           </div>
         </div>
       `,
@@ -525,14 +754,18 @@ function updateMapMarkers() {
 
     const popupContent = `
       <div style="font-family: var(--font-body); padding: 4px; min-width: 230px;">
-        <strong style="color: ${sector.color}; font-size: 1.05rem;">${sector.name}</strong>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <strong style="color: ${sector.color}; font-size: 1.05rem;">${sector.name}</strong>
+          <span style="font-size: 0.75rem; background: rgba(0,242,254,0.15); color: var(--cyan-neon); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-weight: 700;">${hourTitle}</span>
+        </div>
         <p style="font-size: 0.78rem; color: #94a3b8; margin: 2px 0 6px;">${sector.landmarks}</p>
         <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
-          <span>Estado: <strong>${sector.weather.text}</strong></span>
-          <span style="color: var(--cyan-neon); font-family: var(--font-mono);"><strong>${sector.precip} mm/h</strong></span>
+          <span>Estado: <strong style="color: ${weather.color};">${weather.text}</strong></span>
+          <span style="color: ${weather.color}; font-family: var(--font-mono);"><strong>${precip} mm/h</strong></span>
         </div>
-        <div style="font-size: 0.85rem; margin-top: 4px;">
-          <span>Temp: <strong>${sector.temp}°C</strong> | Viento: <strong>${sector.windSpeed} km/h</strong></span>
+        <div style="font-size: 0.85rem; margin-top: 4px; display: flex; justify-content: space-between;">
+          <span>Temp: <strong>${temp}°C</strong></span>
+          <span>Prob. lluvia: <strong style="color: var(--cyan-neon);">${prob}%</strong></span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px;">
           <button onclick="selectSector('${sector.id}')" style="background: rgba(157,78,221,0.25); border: 1px solid #c77dff; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
@@ -1174,12 +1407,18 @@ function openHourlyModal(sectorId) {
 
       const rawTime = hourly.time[idx];
       const dateObj = new Date(rawTime);
-      const hourStr = dateObj.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+      const hours24 = dateObj.getHours();
+      const mins = String(dateObj.getMinutes()).padStart(2, '0');
+      const isNight = hours24 >= 19 || hours24 < 6;
+      const hours12 = hours24 % 12 || 12;
+      const ampm = hours24 >= 12 ? 'PM' : 'AM';
+      const hourStr = `${hours12}:${mins} ${ampm}`;
+
       const pVal = (hourly.precipitation[idx] || 0).toFixed(1);
       const prob = hourly.precipitation_probability ? hourly.precipitation_probability[idx] || 0 : 0;
       const temp = Math.round(hourly.temperature_2m ? hourly.temperature_2m[idx] : 25);
       const code = hourly.weather_code ? hourly.weather_code[idx] : 3;
-      const wInfo = interpretWeatherCode(code, parseFloat(pVal));
+      const wInfo = interpretWeatherCode(code, parseFloat(pVal), isNight);
 
       const barPercent = Math.min(100, Math.round((parseFloat(pVal) / 5) * 100));
 
@@ -1187,13 +1426,13 @@ function openHourlyModal(sectorId) {
         <div class="hour-row ${i === 0 ? 'current-hour' : ''}">
           <div class="hour-time">${i === 0 ? 'Ahora' : hourStr}</div>
           <div class="hour-weather-desc">
-            <i class="fa-solid ${wInfo.icon}" style="color: ${wInfo.isRaining ? 'var(--cyan-neon)' : 'var(--amber-warn)'}"></i>
-            <span>${wInfo.text}</span>
+            <i class="fa-solid ${wInfo.icon}" style="color: ${wInfo.color}; font-size: 1.15rem; min-width: 22px; text-align: center;"></i>
+            <span style="color: ${wInfo.isRaining ? '#fff' : '#cbd5e1'}; font-weight: ${wInfo.isRaining ? '700' : '500'};">${wInfo.text}</span>
           </div>
           <div class="hour-precip-bar-wrapper">
-            <div class="hour-precip-val">${pVal} mm (${prob}%)</div>
+            <div class="hour-precip-val" style="color: ${wInfo.color};">${pVal} mm (${prob}%)</div>
             <div class="hour-precip-bar">
-              <div class="hour-precip-fill" style="width: ${Math.max(barPercent, prob > 30 ? 15 : 4)}%;"></div>
+              <div class="hour-precip-fill" style="width: ${Math.max(barPercent, prob > 30 ? 15 : 4)}%; background: ${wInfo.color};"></div>
             </div>
           </div>
           <div class="hour-temp">${temp}°C</div>

@@ -115,6 +115,17 @@
       </div>
 
       <div class="map-card-wrapper">
+        <!-- Selector flotante de simulación horaria (Arriba en el mapa) -->
+        <div class="map-time-nav-bar" id="map-time-bar">
+          <div class="time-bar-title-wrap">
+            <span class="time-bar-badge"><i class="fa-solid fa-clock-rotate-left"></i> Hora</span>
+            <span class="time-bar-status" id="time-bar-status">En Vivo</span>
+          </div>
+          <div class="time-pills-scroller" id="time-pills-container">
+            <!-- Píldoras horarias generadas dinámicamente -->
+          </div>
+        </div>
+
         <div id="machala-map" class="machala-leaflet-map"></div>
         <div class="map-info-overlay">
           <div class="map-legend-pill">
