@@ -7,14 +7,23 @@
 // Definición geográfica de los 7 sectores clave de Machala
 const MACHALA_SECTORS = [
   {
-    id: 'norte',
+    id: 'micasa',
     name: 'Mi Casa 🏠 (Hernan - Los Vergeles)',
-    landmarks: 'Urb. Los Vergeles, Urdesa Este, Circunvalación Norte',
-    lat: -3.2435,
-    lon: -79.9480,
+    landmarks: 'Cdla. Los Vergeles, Urbano Los Andes, San Gregorio',
+    lat: -3.2545,
+    lon: -79.9345,
     tag: 'Mi Casa 🏠',
     color: '#ffd166',
     isUserHome: true
+  },
+  {
+    id: 'norte',
+    name: 'Norte (Urdesa Este / Circunvalación)',
+    landmarks: 'Urdesa Este, Av. Guayas, Circunvalación Norte',
+    lat: -3.2435,
+    lon: -79.9480,
+    tag: 'Norte',
+    color: '#00f2fe'
   },
   {
     id: 'machala_libre',
@@ -23,7 +32,7 @@ const MACHALA_SECTORS = [
     lat: -3.2515,
     lon: -79.9385,
     tag: 'Machala Libre',
-    color: '#00f2fe'
+    color: '#38bdf8'
   },
   {
     id: 'brisas',
@@ -148,7 +157,7 @@ const METEO_SOURCES = [
 // Estado global de la aplicación
 let weatherState = {
   sectorsData: [],
-  selectedSectorId: 'norte',
+  selectedSectorId: 'micasa',
   userSectorId: null,
   activeFilter: 'all',
   lastUpdated: null,
@@ -806,7 +815,19 @@ function updateMapMarkers(simulatedHourIndex = null) {
       iconAnchor: [0, 0]
     });
 
-    const marker = L.marker([sector.lat, sector.lon], { icon: customIcon });
+    const marker = L.marker([sector.lat, sector.lon], { 
+      icon: customIcon,
+      draggable: isHome
+    });
+
+    if (isHome) {
+      marker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        sector.lat = pos.lat;
+        sector.lon = pos.lng;
+        showMapToast(`Casa reubicada en: (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`);
+      });
+    }
 
     const popupContent = `
       <div style="font-family: var(--font-body); padding: 4px; min-width: 230px;">
@@ -823,6 +844,7 @@ function updateMapMarkers(simulatedHourIndex = null) {
           <span>Temp: <strong>${temp}°C</strong></span>
           <span>Prob. lluvia: <strong style="color: var(--cyan-neon);">${prob}%</strong></span>
         </div>
+        ${isHome ? '<p style="font-size: 0.72rem; color: #ffd166; margin: 6px 0 2px;"><i class="fa-solid fa-arrows-up-down-left-right"></i> Puedes arrastrar este pin a la ubicación exacta de tu casa</p>' : ''}
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px;">
           <button onclick="selectSector('${sector.id}')" style="background: rgba(157,78,221,0.25); border: 1px solid #c77dff; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Asesor IA
