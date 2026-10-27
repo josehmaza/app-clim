@@ -260,7 +260,7 @@ async function fetchMachalaWeatherData() {
   const lats = MACHALA_SECTORS.map(s => s.lat).join(',');
   const lons = MACHALA_SECTORS.map(s => s.lon).join(',');
 
-  const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,precipitation_probability,precipitation,rain,weather_code&minutely_15=precipitation,weather_code&timezone=America%2FGuayaquil&forecast_days=2`;
+  const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,precipitation_probability,precipitation,rain,weather_code&minutely_15=precipitation,weather_code&timezone=America%2FGuayaquil&forecast_days=3`;
 
   const response = await fetch(apiUrl);
   if (!response.ok) {
@@ -534,6 +534,10 @@ function initMapTimeSelector() {
   const statusEl = document.getElementById('time-bar-status');
   const resetBtn = document.getElementById('btn-reset-time');
   const mapBar = document.getElementById('map-time-bar');
+  const btnLeft = document.getElementById('btn-scroll-left');
+  const btnRight = document.getElementById('btn-scroll-right');
+  const btnTomorrow = document.getElementById('btn-jump-tomorrow');
+
   if (!container || !weatherState.sectorsData || !weatherState.sectorsData.length) return;
 
   // Evitar que el drag/scroll sobre el selector mueva el mapa Leaflet
@@ -547,13 +551,14 @@ function initMapTimeSelector() {
   if (!hourly || !hourly.time || !hourly.time.length) return;
 
   const now = new Date();
+  const nowDate = now.getDate();
   const currentHour = now.getHours();
 
   // Buscar índice de la hora actual en los datos
   let nowIdx = 0;
   for (let i = 0; i < hourly.time.length; i++) {
     const d = new Date(hourly.time[i]);
-    if (d.getDate() === now.getDate() && d.getHours() === currentHour) {
+    if (d.getDate() === nowDate && d.getHours() === currentHour) {
       nowIdx = i;
       break;
     }
@@ -567,14 +572,15 @@ function initMapTimeSelector() {
     </button>
   `;
 
-  for (let offset = 1; offset <= 24; offset++) {
+  // Generar hasta 36 horas adelante (incluyendo todo el día de mañana)
+  for (let offset = 1; offset <= 36; offset++) {
     const idx = nowIdx + offset;
     if (idx >= hourly.time.length) break;
 
     const timeStr = hourly.time[idx];
     const dateObj = new Date(timeStr);
     const h24 = dateObj.getHours();
-    const isTomorrow = dateObj.getDate() !== now.getDate();
+    const isTomorrow = dateObj.getDate() !== nowDate;
     const dayLabel = isTomorrow ? 'Mañana' : 'Hoy';
     const hourLabel = `${h24.toString().padStart(2, '0')}:00`;
 
@@ -608,6 +614,57 @@ function initMapTimeSelector() {
 
   container.innerHTML = pillsHtml;
 
+  // Permitir scroll horizontal suave con la rueda del ratón
+  container.addEventListener('wheel', function(e) {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      container.scrollLeft += e.deltaY * 1.6;
+    }
+  }, { passive: false });
+
+  // Soporte de arrastre con el ratón (drag to scroll)
+  let isDown = false;
+  let startX = 0;
+  let scrollStart = 0;
+  container.addEventListener('mousedown', (e) => {
+    isDown = true;
+    startX = e.pageX - container.offsetLeft;
+    scrollStart = container.scrollLeft;
+  });
+  container.addEventListener('mouseleave', () => { isDown = false; });
+  container.addEventListener('mouseup', () => { isDown = false; });
+  container.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    container.scrollLeft = scrollStart - walk;
+  });
+
+  // Flechas de navegación izquierda y derecha
+  if (btnLeft) {
+    btnLeft.onclick = () => {
+      container.scrollBy({ left: -240, behavior: 'smooth' });
+    };
+  }
+  if (btnRight) {
+    btnRight.onclick = () => {
+      container.scrollBy({ left: 240, behavior: 'smooth' });
+    };
+  }
+
+  // Botón directo "Ver Mañana"
+  if (btnTomorrow) {
+    btnTomorrow.onclick = () => {
+      const firstTomorrow = container.querySelector('.pill-tomorrow');
+      if (firstTomorrow) {
+        firstTomorrow.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        firstTomorrow.click();
+      }
+    };
+  }
+
+  // Event listener para cada píldora horaria
   container.querySelectorAll('.time-pill').forEach(btn => {
     btn.addEventListener('click', function() {
       container.querySelectorAll('.time-pill').forEach(b => b.classList.remove('active'));
@@ -640,7 +697,10 @@ function initMapTimeSelector() {
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
       const liveBtn = container.querySelector('[data-hour-idx="live"]');
-      if (liveBtn) liveBtn.click();
+      if (liveBtn) {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+        liveBtn.click();
+      }
     });
   }
 }

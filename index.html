@@ -121,8 +121,22 @@
             <span class="time-bar-badge"><i class="fa-solid fa-clock-rotate-left"></i> Hora</span>
             <span class="time-bar-status" id="time-bar-status">En Vivo</span>
           </div>
+
+          <button id="btn-scroll-left" class="btn-scroll-arrow" title="Ver horas anteriores"><i class="fa-solid fa-chevron-left"></i></button>
+
           <div class="time-pills-scroller" id="time-pills-container">
             <!-- Píldoras horarias generadas dinámicamente -->
+          </div>
+
+          <button id="btn-scroll-right" class="btn-scroll-arrow" title="Ver horas siguientes (Mañana)"><i class="fa-solid fa-chevron-right"></i></button>
+
+          <div class="time-bar-actions">
+            <button id="btn-jump-tomorrow" class="btn-jump-day" title="Saltar directamente a las horas de mañana">
+              <i class="fa-solid fa-calendar-day"></i> Ver Mañana
+            </button>
+            <button id="btn-reset-time" class="btn-time-reset" title="Volver a tiempo real" style="display: none;">
+              <i class="fa-solid fa-rotate-left"></i> Ahora
+            </button>
           </div>
         </div>
 

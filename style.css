@@ -634,6 +634,69 @@ body {
   font-weight: 700;
 }
 
+.btn-scroll-arrow {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #cbd5e1;
+  width: 26px;
+  height: 40px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-scroll-arrow:hover {
+  background: rgba(0, 242, 254, 0.25);
+  border-color: var(--cyan-neon);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.time-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.btn-jump-day {
+  background: rgba(255, 183, 3, 0.16);
+  border: 1px solid rgba(255, 183, 3, 0.45);
+  color: #ffd166;
+  padding: 0.32rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-jump-day:hover {
+  background: rgba(255, 183, 3, 0.32);
+  border-color: #ffd166;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 183, 3, 0.45);
+}
+
+.time-pill.pill-tomorrow {
+  border-color: rgba(255, 183, 3, 0.25);
+  background: rgba(255, 183, 3, 0.05);
+}
+
+.time-pill.pill-tomorrow:hover {
+  border-color: rgba(255, 183, 3, 0.55);
+  background: rgba(255, 183, 3, 0.15);
+}
+
 .btn-time-reset {
   background: rgba(255, 71, 126, 0.2);
   border: 1px solid rgba(255, 71, 126, 0.45);
