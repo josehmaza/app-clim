@@ -123,98 +123,143 @@
         <div class="legend-panel-header">
           <div class="legend-panel-title">
             <i class="fa-solid fa-circle-info" style="color: #ffd166;"></i>
-            <strong>Guía de Íconos:</strong> ¿Qué significa cada símbolo en las horas y sectores de Machala?
+            <strong>Guía de Íconos y Rangos de Lluvia:</strong>
+            <span class="legend-subtitle-text">Milímetros por hora (mm/h) y condiciones en Machala</span>
           </div>
           <button id="btn-close-legend" class="legend-close-btn" title="Cerrar guía"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="legend-cards-grid">
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #ff477e; background: rgba(255, 71, 126, 0.12); border-color: rgba(255, 71, 126, 0.35);">
-              <i class="fa-solid fa-cloud-showers-water"></i>
+
+        <!-- Bloque 1: Niveles de Lluvia y Tormenta -->
+        <div class="legend-group-block">
+          <div class="legend-group-header">
+            <i class="fa-solid fa-cloud-showers-heavy" style="color: var(--cyan-neon);"></i>
+            <span>Niveles de Precipitación y Tormentas (con rangos de mm/h)</span>
+          </div>
+          <div class="legend-cards-grid">
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #ffd166; background: rgba(255, 209, 102, 0.12); border-color: rgba(255, 209, 102, 0.35);">
+                <i class="fa-solid fa-cloud-bolt"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #ffd166;">Tormenta Eléctrica</span>
+                  <span class="legend-mm-badge badge-mm-storm">≥ 3.0 a 15+ mm/h</span>
+                </div>
+                <span class="legend-desc">Relámpagos, truenos y ráfagas fuertes con chubascos violentos.</span>
+              </div>
             </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #ff477e;">Torrencial (&ge; 5 mm/h)</span>
-              <span class="legend-desc">Aguacero torrencial extremo. Riesgo alto de anegamiento en calles.</span>
+
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #ff477e; background: rgba(255, 71, 126, 0.12); border-color: rgba(255, 71, 126, 0.35);">
+                <i class="fa-solid fa-cloud-showers-water"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #ff477e;">Lluvia Torrencial</span>
+                  <span class="legend-mm-badge badge-mm-torrential">≥ 5.0 mm/h</span>
+                </div>
+                <span class="legend-desc">Aguacero extremo continuo. Riesgo alto de anegamiento en calles.</span>
+              </div>
+            </div>
+
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #3a86ff; background: rgba(58, 134, 255, 0.12); border-color: rgba(58, 134, 255, 0.35);">
+                <i class="fa-solid fa-cloud-showers-heavy"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #3a86ff;">Lluvia Fuerte</span>
+                  <span class="legend-mm-badge badge-mm-heavy">2.0 a 4.9 mm/h</span>
+                </div>
+                <span class="legend-desc">Chubasco fuerte y cerrado. Disminuye la visibilidad al conducir.</span>
+              </div>
+            </div>
+
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #00f2fe; background: rgba(0, 242, 254, 0.12); border-color: rgba(0, 242, 254, 0.35);">
+                <i class="fa-solid fa-cloud-rain"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #00f2fe;">Lluvia Moderada</span>
+                  <span class="legend-mm-badge badge-mm-moderate">0.5 a 1.9 mm/h</span>
+                </div>
+                <span class="legend-desc">Lluvia normal continua. Asfalto mojado y charcos ligeros.</span>
+              </div>
+            </div>
+
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #38ef7d; background: rgba(56, 239, 125, 0.12); border-color: rgba(56, 239, 125, 0.35);">
+                <i class="fa-solid fa-cloud-sun-rain"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #38ef7d;">Llovizna / Garúa</span>
+                  <span class="legend-mm-badge badge-mm-drizzle">0.1 a 0.4 mm/h</span>
+                </div>
+                <span class="legend-desc">Chispeo fino o garúa ligera con posibles claros de sol o luna.</span>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #3a86ff; background: rgba(58, 134, 255, 0.12); border-color: rgba(58, 134, 255, 0.35);">
-              <i class="fa-solid fa-cloud-showers-heavy"></i>
-            </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #3a86ff;">Fuerte (2 a 5 mm/h)</span>
-              <span class="legend-desc">Chubasco fuerte continuo. Disminuye la visibilidad al conducir.</span>
-            </div>
+        <!-- Bloque 2: Estado del Cielo (Tiempo Seco) -->
+        <div class="legend-group-block" style="margin-top: 0.9rem;">
+          <div class="legend-group-header">
+            <i class="fa-solid fa-sun" style="color: #ffb703;"></i>
+            <span>Estado del Cielo (Tiempo Seco • 0.0 mm/h)</span>
           </div>
+          <div class="legend-cards-grid">
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #cbd5e1; background: rgba(148, 163, 184, 0.12); border-color: rgba(148, 163, 184, 0.35);">
+                <i class="fa-solid fa-cloud"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #cbd5e1;">Cielo Muy Nublado</span>
+                  <span class="legend-mm-badge badge-mm-dry">0.0 mm/h</span>
+                </div>
+                <span class="legend-desc">Cielo completamente encapotado de nubes sin lluvia activa.</span>
+              </div>
+            </div>
 
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #00f2fe; background: rgba(0, 242, 254, 0.12); border-color: rgba(0, 242, 254, 0.35);">
-              <i class="fa-solid fa-cloud-rain"></i>
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #90e0ef; background: rgba(144, 224, 239, 0.12); border-color: rgba(144, 224, 239, 0.35);">
+                <i class="fa-solid fa-cloud-sun"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #90e0ef;">Parcialmente Nublado</span>
+                  <span class="legend-mm-badge badge-mm-dry">0.0 mm/h</span>
+                </div>
+                <span class="legend-desc">Intervalos de sol y nubes pasajeras durante el día o la noche.</span>
+              </div>
             </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #00f2fe;">Moderada (0.5 a 2 mm/h)</span>
-              <span class="legend-desc">Lluvia normal continua. Asfalto mojado y charcos ligeros.</span>
-            </div>
-          </div>
 
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #38ef7d; background: rgba(56, 239, 125, 0.12); border-color: rgba(56, 239, 125, 0.35);">
-              <i class="fa-solid fa-cloud-sun-rain"></i>
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #ffb703; background: rgba(255, 183, 3, 0.12); border-color: rgba(255, 183, 3, 0.35);">
+                <i class="fa-solid fa-sun"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #ffb703;">Despejado / Soleado</span>
+                  <span class="legend-mm-badge badge-mm-dry">0.0 mm/h</span>
+                </div>
+                <span class="legend-desc">Día soleado con cielo limpio, abierto y radiación solar alta.</span>
+              </div>
             </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #38ef7d;">Llovizna / Garúa (0.1 a 0.5 mm)</span>
-              <span class="legend-desc">Chispeo fino o garúa con claros de sol o luna.</span>
-            </div>
-          </div>
 
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #ffd166; background: rgba(255, 209, 102, 0.12); border-color: rgba(255, 209, 102, 0.35);">
-              <i class="fa-solid fa-cloud-bolt"></i>
-            </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #ffd166;">Tormenta Eléctrica</span>
-              <span class="legend-desc">Actividad con relámpagos, truenos y ráfagas de viento.</span>
-            </div>
-          </div>
-
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #cbd5e1; background: rgba(148, 163, 184, 0.12); border-color: rgba(148, 163, 184, 0.35);">
-              <i class="fa-solid fa-cloud"></i>
-            </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #cbd5e1;">Cielo Muy Nublado</span>
-              <span class="legend-desc">Cielo completamente tapado de nubes sin lluvia activa.</span>
-            </div>
-          </div>
-
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #90e0ef; background: rgba(144, 224, 239, 0.12); border-color: rgba(144, 224, 239, 0.35);">
-              <i class="fa-solid fa-cloud-sun"></i>
-            </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #90e0ef;">Parcialmente Nublado</span>
-              <span class="legend-desc">Intervalos de sol y nubes durante el día o la noche.</span>
-            </div>
-          </div>
-
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #ffb703; background: rgba(255, 183, 3, 0.12); border-color: rgba(255, 183, 3, 0.35);">
-              <i class="fa-solid fa-sun"></i>
-            </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #ffb703;">Despejado / Soleado</span>
-              <span class="legend-desc">Día con cielo despejado y sol pleno.</span>
-            </div>
-          </div>
-
-          <div class="legend-card-item">
-            <div class="legend-icon-wrap" style="color: #a78bfa; background: rgba(167, 139, 250, 0.12); border-color: rgba(167, 139, 250, 0.35);">
-              <i class="fa-solid fa-moon"></i>
-            </div>
-            <div class="legend-info">
-              <span class="legend-name" style="color: #a78bfa;">Noche Despejada</span>
-              <span class="legend-desc">Cielo nocturno limpio y estrellado.</span>
+            <div class="legend-card-item">
+              <div class="legend-icon-wrap" style="color: #a78bfa; background: rgba(167, 139, 250, 0.12); border-color: rgba(167, 139, 250, 0.35);">
+                <i class="fa-solid fa-moon"></i>
+              </div>
+              <div class="legend-info">
+                <div class="legend-name-row">
+                  <span class="legend-name" style="color: #a78bfa;">Noche Despejada</span>
+                  <span class="legend-mm-badge badge-mm-dry">0.0 mm/h</span>
+                </div>
+                <span class="legend-desc">Cielo nocturno despejado, estrellado y con buena visibilidad.</span>
+              </div>
             </div>
           </div>
         </div>

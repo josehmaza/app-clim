@@ -528,10 +528,18 @@ body {
   gap: 0.5rem;
   font-size: 0.85rem;
   color: var(--text-primary);
+  flex-wrap: wrap;
 }
 
 .legend-panel-title strong {
   color: #ffd166;
+}
+
+.legend-subtitle-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-left: 0.2rem;
 }
 
 .legend-close-btn {
@@ -550,9 +558,26 @@ body {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.legend-group-block {
+  margin-bottom: 0.4rem;
+}
+
+.legend-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  padding-left: 0.2rem;
+}
+
 .legend-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.65rem;
 }
 
@@ -588,13 +613,68 @@ body {
 .legend-info {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.legend-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  width: 100%;
 }
 
 .legend-name {
   font-size: 0.78rem;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
+}
+
+.legend-mm-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.badge-mm-storm {
+  background: rgba(255, 209, 102, 0.15);
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  color: #ffd166;
+}
+
+.badge-mm-torrential {
+  background: rgba(255, 71, 126, 0.15);
+  border: 1px solid rgba(255, 71, 126, 0.35);
+  color: #ff477e;
+}
+
+.badge-mm-heavy {
+  background: rgba(58, 134, 255, 0.15);
+  border: 1px solid rgba(58, 134, 255, 0.35);
+  color: #3a86ff;
+}
+
+.badge-mm-moderate {
+  background: rgba(0, 242, 254, 0.15);
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  color: #00f2fe;
+}
+
+.badge-mm-drizzle {
+  background: rgba(56, 239, 125, 0.15);
+  border: 1px solid rgba(56, 239, 125, 0.35);
+  color: #38ef7d;
+}
+
+.badge-mm-dry {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
 }
 
 .legend-desc {
